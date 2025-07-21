@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import * as XLSX from "xlsx"
 import GSTInvoiceTemplate from "./components/gst-invoice-template"
 import { useReactToPrint } from "react-to-print"
+import html2pdf from "html2pdf.js"
 
 interface GSTInvoiceData {
   invoiceNumber: string
@@ -257,7 +258,23 @@ export default function GSTInvoiceGenerator() {
                   <div className="space-y-2">
                     <Button onClick={handlePrint} className="w-full bg-red-600 hover:bg-red-700">
                       <Download className="w-4 h-4 mr-2" />
-                      Download Invoice
+                      Download Invoice (Print Dialog)
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (printRef.current) {
+                          await html2pdf().from(printRef.current).set({
+                            margin: 0.5,
+                            filename: invoiceData.invoiceNumber ? `GST_Invoice_${invoiceData.invoiceNumber}.pdf` : 'GST_Invoice.pdf',
+                            html2canvas: { scale: 2 },
+                            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                          }).save();
+                        }
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF (Direct)
                     </Button>
                     <div className="text-xs text-gray-400 text-center">
                       <IndianRupee className="w-3 h-3 inline mr-1" />
