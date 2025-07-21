@@ -73,29 +73,91 @@ export default function GSTInvoiceGenerator() {
   }
 
   const processExcelData = (data: any[][]): GSTInvoiceData => {
-    // Expected Excel format:
-    // Row 1: Headers
-    // Row 2: Invoice Number, Invoice Date, Due Date, Place of Supply
-    // Row 3: Customer Name, Address, City, State, Pincode, Country
-    // Row 4+: Description, HSN/SAC, Quantity, Rate, CGST%, SGST%
+    // If only one data row after header, treat it as all info in one row
+    if (data.length === 2) {
+      const row = data[1];
+      const quantity = Number.parseFloat(row[2]) || 1;
+      const rate = Number.parseFloat(row[3]) || 0;
+      const cgstPercent = Number.parseFloat(row[4]) || 9;
+      const sgstPercent = Number.parseFloat(row[5]) || 9;
+      const amount = quantity * rate;
+      const cgstAmount = (amount * cgstPercent) / 100;
+      const sgstAmount = (amount * sgstPercent) / 100;
+      const subTotal = amount;
+      const cgstTotal = cgstAmount;
+      const sgstTotal = sgstAmount;
+      const totalAmount = subTotal + cgstTotal + sgstTotal;
+      const paymentMade = Number.parseFloat(row[16]) || totalAmount;
+      const balanceDue = totalAmount - paymentMade;
+      return {
+        invoiceNumber: row[6] || "INV-000001",
+        invoiceDate: row[7] || new Date().toLocaleDateString("en-GB"),
+        dueDate: row[8] || new Date().toLocaleDateString("en-GB"),
+        placeOfSupply: row[9] || "Gujarat (24)",
+        customerDetails: {
+          name: row[10] || "Customer Name",
+          address: row[11] || "Address Line 1",
+          city: row[12] || "City",
+          state: row[13] || "State",
+          pincode: row[14] || "000000",
+          country: row[15] || "India",
+        },
+        items: [
+          {
+            description: row[0],
+            hsnSac: row[1],
+            quantity,
+            rate,
+            cgstPercent,
+            sgstPercent,
+            amount,
+          },
+        ],
+        subTotal,
+        cgstTotal,
+        sgstTotal,
+        totalAmount,
+        paymentMade,
+        balanceDue,
+      };
+    }
 
-    const items = []
-    let subTotal = 0
-    let cgstTotal = 0
-    let sgstTotal = 0
+    // If only header + product rows (no invoice/customer info), use defaults
+    let invoiceInfoRow = data[1] || [];
+    let customerInfoRow = data[2] || [];
+    let productStartIndex = 3;
 
-    // Process items starting from row 4 (index 3)
-    for (let i = 3; i < data.length && data[i][0]; i++) {
-      const row = data[i]
-      if (row[0] && row[1] && row[2] && row[3]) {
-        const quantity = Number.parseFloat(row[2]) || 1
-        const rate = Number.parseFloat(row[3]) || 0
-        const cgstPercent = Number.parseFloat(row[4]) || 9
-        const sgstPercent = Number.parseFloat(row[5]) || 9
+    // Detect if the file is header + products only (no invoice/customer info)
+    // If the second row (data[1]) looks like a product (has description/hsn_sac), treat all rows after header as products
+    if (
+      data.length > 1 &&
+      data[1][0] && typeof data[1][0] === 'string' &&
+      data[1][1] && typeof data[1][1] === 'string' &&
+      (!data[1][2] || !isNaN(Number(data[1][2])))
+    ) {
+      // No invoice/customer info, products start at row 2
+      invoiceInfoRow = [];
+      customerInfoRow = [];
+      productStartIndex = 1;
+    }
 
-        const amount = quantity * rate
-        const cgstAmount = (amount * cgstPercent) / 100
-        const sgstAmount = (amount * sgstPercent) / 100
+    const items = [];
+    let subTotal = 0;
+    let cgstTotal = 0;
+    let sgstTotal = 0;
+
+    // Process items
+    for (let i = productStartIndex; i < data.length && data[i][0]; i++) {
+      const row = data[i];
+      if (row[0] && row[1]) {
+        const quantity = Number.parseFloat(row[2]) || 1;
+        const rate = Number.parseFloat(row[3]) || 0;
+        const cgstPercent = Number.parseFloat(row[4]) || 9;
+        const sgstPercent = Number.parseFloat(row[5]) || 9;
+
+        const amount = quantity * rate;
+        const cgstAmount = (amount * cgstPercent) / 100;
+        const sgstAmount = (amount * sgstPercent) / 100;
 
         items.push({
           description: row[0],
@@ -105,30 +167,30 @@ export default function GSTInvoiceGenerator() {
           cgstPercent,
           sgstPercent,
           amount,
-        })
+        });
 
-        subTotal += amount
-        cgstTotal += cgstAmount
-        sgstTotal += sgstAmount
+        subTotal += amount;
+        cgstTotal += cgstAmount;
+        sgstTotal += sgstAmount;
       }
     }
 
-    const totalAmount = subTotal + cgstTotal + sgstTotal
-    const paymentMade = Number.parseFloat(data[1]?.[4]) || totalAmount
-    const balanceDue = totalAmount - paymentMade
+    const totalAmount = subTotal + cgstTotal + sgstTotal;
+    const paymentMade = Number.parseFloat(invoiceInfoRow[4]) || totalAmount;
+    const balanceDue = totalAmount - paymentMade;
 
     return {
-      invoiceNumber: data[1]?.[0] || "INV-000001",
-      invoiceDate: data[1]?.[1] || new Date().toLocaleDateString("en-GB"),
-      dueDate: data[1]?.[2] || new Date().toLocaleDateString("en-GB"),
-      placeOfSupply: data[1]?.[3] || "Gujarat (24)",
+      invoiceNumber: invoiceInfoRow[0] || "INV-000001",
+      invoiceDate: invoiceInfoRow[1] || new Date().toLocaleDateString("en-GB"),
+      dueDate: invoiceInfoRow[2] || new Date().toLocaleDateString("en-GB"),
+      placeOfSupply: invoiceInfoRow[3] || "Gujarat (24)",
       customerDetails: {
-        name: data[2]?.[0] || "Customer Name",
-        address: data[2]?.[1] || "Address Line 1",
-        city: data[2]?.[2] || "City",
-        state: data[2]?.[3] || "State",
-        pincode: data[2]?.[4] || "000000",
-        country: data[2]?.[5] || "India",
+        name: customerInfoRow[0] || "Customer Name",
+        address: customerInfoRow[1] || "Address Line 1",
+        city: customerInfoRow[2] || "City",
+        state: customerInfoRow[3] || "State",
+        pincode: customerInfoRow[4] || "000000",
+        country: customerInfoRow[5] || "India",
       },
       items,
       subTotal,
@@ -137,7 +199,7 @@ export default function GSTInvoiceGenerator() {
       totalAmount,
       paymentMade,
       balanceDue,
-    }
+    };
   }
 
   // downloadInvoice is replaced by handlePrint from react-to-print
