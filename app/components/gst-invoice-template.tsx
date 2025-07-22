@@ -140,9 +140,9 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
       <div className="border border-gray-400 p-3 mb-4 bg-gray-100">
         <div className="font-semibold text-sm mb-2">{data.customerDetails.name}</div>
         <div className="text-xs space-y-1">
-          <div>{data.customerDetails.address},</div>
+          <div>{data.customerDetails.address}</div>
           <div>
-            {data.customerDetails.city}, {data.customerDetails.state} - {data.customerDetails.pincode},
+            {data.customerDetails.city}, {data.customerDetails.state} – {data.customerDetails.pincode}
           </div>
           <div>{data.customerDetails.country}</div>
         </div>

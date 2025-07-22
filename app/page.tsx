@@ -101,12 +101,12 @@ export default function GSTInvoiceGenerator() {
         dueDate: row[3],
         placeOfSupply: row[4] || "Gujarat (24)",
         customerDetails: {
-          name: row[10] || "Customer Name",
-          address: row[11] || "Address Line 1",
-          city: row[12] || "City",
-          state: row[13] || "State",
-          pincode: row[14] || "000000",
-          country: row[15] || "India",
+          name: row[6] || "Customer Name",
+          address: row[7] || "Address Line 1",
+          city: row[8] || "City",
+          state: row[9] || "State",
+          pincode: row[10] || "000000",
+          country: row[11] || "India",
         },
         items: [
           {
