@@ -174,9 +174,9 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
           </thead>
           <tbody>
             {data.items.map((item, index) => {
-              const cgstAmount = (item.amount * item.cgstPercent) / 100
-              const sgstAmount = (item.amount * item.sgstPercent) / 100
-              const totalItemAmount = item.amount + cgstAmount + sgstAmount
+              const cgstAmount = item.rate * (item.cgstPercent / 100);
+              const sgstAmount = item.rate * (item.sgstPercent / 100);
+              const totalItemAmount = item.rate;
 
               return (
                 <tr key={index}>
