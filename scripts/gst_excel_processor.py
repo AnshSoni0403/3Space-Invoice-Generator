@@ -21,9 +21,10 @@ def process_gst_excel_to_invoice(file_path: str) -> Dict[str, Any]:
         # Extract invoice information
         invoice_number = str(df.iloc[1, 0]) if pd.notna(df.iloc[1, 0]) else "INV-000001"
         invoice_date = str(df.iloc[1, 1]) if pd.notna(df.iloc[1, 1]) else datetime.now().strftime('%d/%m/%Y')
-        due_date = str(df.iloc[1, 2]) if pd.notna(df.iloc[1, 2]) else datetime.now().strftime('%d/%m/%Y')
-        place_of_supply = str(df.iloc[1, 3]) if pd.notna(df.iloc[1, 3]) else "Gujarat (24)"
-        payment_made = float(df.iloc[1, 4]) if pd.notna(df.iloc[1, 4]) else 0
+        due_date = str(df.iloc[1, 3]) if pd.notna(df.iloc[1, 3]) else datetime.now().strftime('%d/%m/%Y')
+        place_of_supply = str(df.iloc[1, 4]) if pd.notna(df.iloc[1, 4]) else "Gujarat (24)"
+        payment_made = float(df.iloc[2, 20]) if pd.notna(df.iloc[2, 20]) else 0
+        print("Payment Made Fetched:", payment_made)
         
         # Extract customer information
         customer_name = str(df.iloc[2, 0]) if pd.notna(df.iloc[2, 0]) else "Customer Name"
@@ -62,7 +63,7 @@ def process_gst_excel_to_invoice(file_path: str) -> Dict[str, Any]:
                     "amount": amount
                 })
                 
-                sub_total += amount
+                sub_total = rate
                 cgst_total += cgst_amount
                 sgst_total += sgst_amount
         

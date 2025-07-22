@@ -35,35 +35,35 @@ interface GSTInvoiceTemplateProps {
 }
 
 export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
+  // Indian number to words function (supports up to crores)
   const numberToWords = (num: number): string => {
-    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
-    const teens = [
-      "Ten",
-      "Eleven",
-      "Twelve",
-      "Thirteen",
-      "Fourteen",
-      "Fifteen",
-      "Sixteen",
-      "Seventeen",
-      "Eighteen",
-      "Nineteen",
-    ]
-    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    if (num === 0) return "Zero";
+    if (num < 0) return "Minus " + numberToWords(Math.abs(num));
+    const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    const scales = ["", "Thousand", "Lakh", "Crore"];
 
-    if (num === 0) return "Zero"
-    if (num < 10) return ones[num]
-    if (num < 20) return teens[num - 10]
-    if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? " " + ones[num % 10] : "")
-    if (num < 1000)
-      return ones[Math.floor(num / 100)] + " Hundred" + (num % 100 !== 0 ? " " + numberToWords(num % 100) : "")
-    if (num < 100000)
-      return (
-        numberToWords(Math.floor(num / 1000)) + " Thousand" + (num % 1000 !== 0 ? " " + numberToWords(num % 1000) : "")
-      )
+    let words = "";
+    let crore = Math.floor(num / 10000000);
+    num = num % 10000000;
+    let lakh = Math.floor(num / 100000);
+    num = num % 100000;
+    let thousand = Math.floor(num / 1000);
+    num = num % 1000;
+    let hundred = Math.floor(num / 100);
+    let rest = num % 100;
 
-    return "Amount too large"
-  }
+    if (crore > 0) words += numberToWords(crore) + " Crore ";
+    if (lakh > 0) words += numberToWords(lakh) + " Lakh ";
+    if (thousand > 0) words += numberToWords(thousand) + " Thousand ";
+    if (hundred > 0) words += units[hundred] + " Hundred ";
+    if (rest > 0) {
+      if (words !== "") words += "and ";
+      if (rest < 20) words += units[rest] + " ";
+      else words += tens[Math.floor(rest / 10)] + (rest % 10 !== 0 ? " " + units[rest % 10] : "") + " ";
+    }
+    return words.trim();
+  };
   const formatDate = (dateStr: string | undefined | null) => {
     if (!dateStr || typeof dateStr !== "string") return "";
     // Accepts DD/MM/YYYY, DD-MM-YYYY, or ISO
@@ -75,6 +75,12 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
     }
     return dateStr;
   }
+
+  // Totals for non-standard calculation (sum of rates, not amount)
+  const subTotal = data.items.reduce((sum, item) => sum + item.rate, 0);
+  const cgstTotal = data.items.reduce((sum, item) => sum + (item.rate * (item.cgstPercent / 100)), 0);
+  const sgstTotal = data.items.reduce((sum, item) => sum + (item.rate * (item.sgstPercent / 100)), 0);
+  const totalAmount = subTotal + cgstTotal + sgstTotal;
 
   return (
     <div id="gst-invoice-template" className="bg-white text-black p-6 max-w-4xl mx-auto text-sm">
@@ -203,6 +209,10 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
           <div className="text-xs">
             <div className="font-semibold">Total in Words</div>
             <div className="italic">Indian Rupee {numberToWords(Math.floor(data.totalAmount))} Only</div>
+            <div className="font-semibold mt-2">Payment Made in Words</div>
+            <div className="italic">Indian Rupee {numberToWords(Math.floor(data.paymentMade))} Only</div>
+            <div className="font-semibold mt-2">Balance Due in Words</div>
+            <div className="italic">Indian Rupee {numberToWords(Math.floor(data.balanceDue))} Only</div>
           </div>
           <div className="text-xs mt-4">
             <div className="font-semibold">Thanks for your business.</div>
@@ -218,19 +228,19 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
             <tbody>
               <tr>
                 <td className="text-right pr-4">Sub Total</td>
-                <td className="text-right">{data.subTotal.toFixed(2)}</td>
+                <td className="text-right">{subTotal.toFixed(2)}</td>
               </tr>
               <tr>
-                <td className="text-right pr-4">CGST (9%)</td>
-                <td className="text-right">{data.cgstTotal.toFixed(2)}</td>
+                <td className="text-right pr-4">CGST ({data.items[0]?.cgstPercent || 0}%)</td>
+                <td className="text-right">{cgstTotal.toFixed(2)}</td>
               </tr>
               <tr>
-                <td className="text-right pr-4">SGST (9%)</td>
-                <td className="text-right">{data.sgstTotal.toFixed(2)}</td>
+                <td className="text-right pr-4">SGST ({data.items[0]?.sgstPercent || 0}%)</td>
+                <td className="text-right">{sgstTotal.toFixed(2)}</td>
               </tr>
               <tr className="border-t border-gray-400">
                 <td className="text-right pr-4 font-bold">Total</td>
-                <td className="text-right font-bold">Rs.{data.totalAmount.toFixed(2)}</td>
+                <td className="text-right font-bold">Rs.{totalAmount.toFixed(2)}</td>
               </tr>
               <tr>
                 <td className="text-right pr-4">Payment Made</td>

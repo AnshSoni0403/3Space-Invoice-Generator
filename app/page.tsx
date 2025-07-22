@@ -183,7 +183,7 @@ export default function GSTInvoiceGenerator() {
           amount,
         });
 
-        subTotal += amount;
+        subTotal = rate;
         cgstTotal += cgstAmount;
         sgstTotal += sgstAmount;
       }
