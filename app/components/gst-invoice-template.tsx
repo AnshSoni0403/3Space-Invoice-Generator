@@ -1,6 +1,7 @@
 interface GSTInvoiceData {
   invoiceNumber: string
   invoiceDate: string
+  terms: string
   dueDate: string
   placeOfSupply: string
   customerDetails: {
@@ -62,6 +63,17 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
 
     return "Amount too large"
   }
+  const formatDate = (dateStr: string | undefined | null) => {
+    if (!dateStr || typeof dateStr !== "string") return "";
+    // Accepts DD/MM/YYYY, DD-MM-YYYY, or ISO
+    const parts = dateStr.includes("-") ? dateStr.split("-") : dateStr.split("/");
+    if (parts.length === 3) {
+      // If year is first, swap
+      if (parts[0].length === 4) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+    }
+    return dateStr;
+  }
 
   return (
     <div id="gst-invoice-template" className="bg-white text-black p-6 max-w-4xl mx-auto text-sm">
@@ -95,19 +107,19 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
             <tbody>
               <tr>
                 <td className="font-semibold">#</td>
-                <td>: {data.invoiceNumber}</td>
+                <td>: <span className="font-bold">{data.invoiceNumber}</span></td>
               </tr>
               <tr>
                 <td className="font-semibold">Invoice Date</td>
-                <td>: {data.invoiceDate}</td>
+                <td>: <span className="font-bold">{formatDate(data.invoiceDate)}</span></td>
               </tr>
               <tr>
                 <td className="font-semibold">Terms</td>
-                <td>: Due on Receipt</td>
+                <td>: <span className="font-bold">{data.terms}</span></td>
               </tr>
               <tr>
                 <td className="font-semibold">Due Date</td>
-                <td>: {data.dueDate}</td>
+                <td>: <span className="font-bold">{formatDate(data.dueDate)}</span></td>
               </tr>
             </tbody>
           </table>
@@ -116,8 +128,8 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
           <table className="w-full text-xs">
             <tbody>
               <tr>
-                <td className="font-semibold">Place of Supply</td>
-                <td>: {data.placeOfSupply}</td>
+                <td className="font-semibold">Place Of Supply</td>
+                <td>: <span className="font-bold">{data.placeOfSupply}</span></td>
               </tr>
             </tbody>
           </table>

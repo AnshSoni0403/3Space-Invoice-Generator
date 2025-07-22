@@ -15,6 +15,7 @@ import html2pdf from "html2pdf.js"
 interface GSTInvoiceData {
   invoiceNumber: string
   invoiceDate: string
+  terms: string
   dueDate: string
   placeOfSupply: string
   customerDetails: {
@@ -63,7 +64,10 @@ export default function GSTInvoiceGenerator() {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
 
+      console.log('Raw Excel Data:', jsonData); // Debug log
+
       const processedData = processExcelData(jsonData)
+      console.log('Processed Invoice Data:', processedData); // Debug log
       setInvoiceData(processedData)
     } catch (error) {
       console.error("Error processing file:", error)
@@ -91,10 +95,11 @@ export default function GSTInvoiceGenerator() {
       const paymentMade = Number.parseFloat(row[16]) || totalAmount;
       const balanceDue = totalAmount - paymentMade;
       return {
-        invoiceNumber: row[6] || "INV-000001",
-        invoiceDate: row[7] || new Date().toLocaleDateString("en-GB"),
-        dueDate: row[8] || new Date().toLocaleDateString("en-GB"),
-        placeOfSupply: row[9] || "Gujarat (24)",
+        invoiceNumber: row[0] || "INV-000001",
+        invoiceDate: row[1],
+        terms: row[2] || "Due on Receipt",
+        dueDate: row[3],
+        placeOfSupply: row[4] || "Gujarat (24)",
         customerDetails: {
           name: row[10] || "Customer Name",
           address: row[11] || "Address Line 1",
@@ -105,8 +110,8 @@ export default function GSTInvoiceGenerator() {
         },
         items: [
           {
-            description: row[0],
-            hsnSac: row[1],
+            description: row[5],
+            hsnSac: row[6],
             quantity,
             rate,
             cgstPercent,
@@ -182,9 +187,10 @@ export default function GSTInvoiceGenerator() {
 
     return {
       invoiceNumber: invoiceInfoRow[0] || "INV-000001",
-      invoiceDate: invoiceInfoRow[1] || new Date().toLocaleDateString("en-GB"),
-      dueDate: invoiceInfoRow[2] || new Date().toLocaleDateString("en-GB"),
-      placeOfSupply: invoiceInfoRow[3] || "Gujarat (24)",
+      invoiceDate: invoiceInfoRow[1],
+      terms: invoiceInfoRow[2] || "Due on Receipt",
+      dueDate: invoiceInfoRow[3],
+      placeOfSupply: invoiceInfoRow[4] || "Gujarat (24)",
       customerDetails: {
         name: customerInfoRow[0] || "Customer Name",
         address: customerInfoRow[1] || "Address Line 1",
