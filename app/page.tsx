@@ -26,6 +26,7 @@ interface GSTInvoiceData {
     pincode: string
     country: string
   }
+  subject: string
   items: Array<{
     description: string
     hsnSac: string
@@ -108,6 +109,7 @@ export default function GSTInvoiceGenerator() {
           pincode: row[10] || "000000",
           country: row[11] || "India",
         },
+        subject: row[12] || "",
         items: [
           {
             description: row[5],
@@ -199,6 +201,7 @@ export default function GSTInvoiceGenerator() {
         pincode: customerInfoRow[4] || "000000",
         country: customerInfoRow[5] || "India",
       },
+      subject: invoiceInfoRow[5] || "",
       items,
       subTotal,
       cgstTotal,

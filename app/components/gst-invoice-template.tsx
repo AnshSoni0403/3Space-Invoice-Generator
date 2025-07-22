@@ -12,6 +12,7 @@ interface GSTInvoiceData {
     pincode: string
     country: string
   }
+  subject: string
   items: Array<{
     description: string
     hsnSac: string
@@ -151,7 +152,7 @@ export default function GSTInvoiceTemplate({ data }: GSTInvoiceTemplateProps) {
       {/* Subject */}
       <div className="border border-gray-400 p-2 mb-4">
         <div className="font-semibold text-xs">Subject :</div>
-        <div className="text-xs mt-1">{data.items[0]?.description || "Service Description"}</div>
+        <div className="text-xs mt-1">{data.subject}</div>
       </div>
 
       {/* Items Table */}
