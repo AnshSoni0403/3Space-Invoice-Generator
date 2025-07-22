@@ -112,12 +112,12 @@ export default function GSTInvoiceGenerator() {
         subject: row[12] || "",
         items: [
           {
-            description: row[5],
-            hsnSac: row[6],
-            quantity,
-            rate,
-            cgstPercent,
-            sgstPercent,
+            description: row[14],
+            hsnSac: row[15],
+            quantity: row[16],
+            rate: row[17],
+            cgstPercent: row[18],
+            sgstPercent: row[19],
             amount,
           },
         ],
@@ -158,18 +158,24 @@ export default function GSTInvoiceGenerator() {
     for (let i = productStartIndex; i < data.length && data[i][0]; i++) {
       const row = data[i];
       if (row[0] && row[1]) {
+        const description = row[0];
+        const hsnSac = row[1];
         const quantity = Number.parseFloat(row[2]) || 1;
         const rate = Number.parseFloat(row[3]) || 0;
-        const cgstPercent = Number.parseFloat(row[4]) || 9;
-        const sgstPercent = Number.parseFloat(row[5]) || 9;
+        let cgstPercentRaw = (row[4] || '').toString().replace('%','').trim();
+        let cgstPercent = Number.parseFloat(cgstPercentRaw);
+        if (isNaN(cgstPercent) || cgstPercent < 0 || cgstPercent > 100) cgstPercent = 9;
+        let sgstPercentRaw = (row[5] || '').toString().replace('%','').trim();
+        let sgstPercent = Number.parseFloat(sgstPercentRaw);
+        if (isNaN(sgstPercent) || sgstPercent < 0 || sgstPercent > 100) sgstPercent = 9;
 
         const amount = quantity * rate;
         const cgstAmount = (amount * cgstPercent) / 100;
         const sgstAmount = (amount * sgstPercent) / 100;
 
         items.push({
-          description: row[0],
-          hsnSac: row[1],
+          description,
+          hsnSac,
           quantity,
           rate,
           cgstPercent,
